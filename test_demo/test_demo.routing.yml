@@ -1,0 +1,13 @@
+test_demo.json_page:
+  path: '/page_json/{api_key}/{node_nid}'
+  defaults:
+    _controller: '\Drupal\test_demo\Controller\JsonPage:jsonpage'
+    _title: 'Page Json'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    parameters:
+      api_key:
+        type: entity:test_demo
+      node_nid:
+        type: entity:test_demo
