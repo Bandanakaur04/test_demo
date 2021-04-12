@@ -1,0 +1,50 @@
+<?php
+
+/**
+ * @file
+ * Module to import content from JSON.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\State\StateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function test_demo_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+    // Copay form.
+  if($form_id == 'system_site_information_settings') {
+    //kint($form);
+    $val = \Drupal::state()->get('siteapikey');
+    if(isset($val)) {
+    $default_key = $val;
+    }
+    else {
+     $default_key = 'No API Key yet';
+    }
+
+    $form['actions']['submit']['#value'] = t('Update Configuration');
+    $form['site_information']['api_key'] = [
+      '#type' => 'textfield',
+      '#title' => t('Site API Key'),
+      '#default_value' => $default_key,
+      '#description' => t("The API key for the site."),
+      //'#required' => TRUE,
+    ];
+    foreach (array_keys($form['actions']) as $action) {
+      if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+        $form['actions'][$action]['#submit'][] = 'test_demo_form_submit';// custom submit handler
+      }
+    }
+    
+  }
+}
+
+function test_demo_form_submit(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  if ($form_state->hasValue('api_key') && $form_state->getValue('api_key') !== '') {
+    $api_key = $form_state->getValue('api_key');
+    \Drupal::state()->set('siteapikey',$api_key);
+    $message = 'The siteapi key with the value '.$api_key.' has been saved in the system.';
+    \Drupal::service('messenger')->addMessage($message);
+  }
+}

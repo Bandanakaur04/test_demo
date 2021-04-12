@@ -1,0 +1,5 @@
+name: Demo Module
+description: Module for changing the site information.
+core: 8.x
+package: Custom
+type: module
