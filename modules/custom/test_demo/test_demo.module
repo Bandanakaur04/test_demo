@@ -2,49 +2,56 @@
 
 /**
  * @file
- * Module to import content from JSON.
+ * Contains test_demo.module.
  */
 
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\State\StateInterface;
 
 /**
- * Implements hook_form_alter().
+ * Implements hook_help().
  */
-function test_demo_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-    // Copay form.
-  if($form_id == 'system_site_information_settings') {
-    //kint($form);
-    $val = \Drupal::state()->get('siteapikey');
-    if(isset($val)) {
-    $default_key = $val;
-    }
-    else {
-     $default_key = 'No API Key yet';
-    }
+function test_demo_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the custom module.
+    case 'help.page.custom':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('custom module for test_demo tasks') . '</p>';
+      return $output;
 
-    $form['actions']['submit']['#value'] = t('Update Configuration');
-    $form['site_information']['api_key'] = [
-      '#type' => 'textfield',
-      '#title' => t('Site API Key'),
-      '#default_value' => $default_key,
-      '#description' => t("The API key for the site."),
-      //'#required' => TRUE,
-    ];
-    foreach (array_keys($form['actions']) as $action) {
-      if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
-        $form['actions'][$action]['#submit'][] = 'test_demo_form_submit';// custom submit handler
-      }
-    }
-    
+    default:
   }
 }
 
-function test_demo_form_submit(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
-  if ($form_state->hasValue('api_key') && $form_state->getValue('api_key') !== '') {
-    $api_key = $form_state->getValue('api_key');
-    \Drupal::state()->set('siteapikey',$api_key);
-    $message = 'The siteapi key with the value '.$api_key.' has been saved in the system.';
-    \Drupal::service('messenger')->addMessage($message);
+
+/*
+*
+* Implements hook_form_FORM-ID_alter
+* This is to Add New field in Site information page
+* By default, test_demo.settings siteapikey will be empty.
+*/
+function test_demo_form_system_site_information_settings_alter(&$form, FormStateInterface $form_state) {
+  $siteapikey = '';
+  $siteapikey = \Drupal::config('test_demo.settings')->get('siteapikey');
+  $form['site_information']['siteapikey'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site API Key'),
+    '#default_value' => $siteapikey,
+    '#placeholder' => t('No API Key yet'),
+  );
+  $form['actions']['submit']['#value'] = t('Update Configuration');
+  //Submit handler to store siteapikey value into test_demo.setting
+  $form['#submit'][] = 'test_demo_siteinformation_submit_handler';
+}
+//Submit handler to store siteapikey value into test_demo.setting
+function test_demo_siteinformation_submit_handler(&$form, FormStateInterface $formState) {
+  
+  if( false == empty( $form['site_information']['siteapikey']['#value'] ) && $form['site_information']['siteapikey']['#value'] != \Drupal::config('test_demo.settings')->get('siteapikey') ) {
+
+    \Drupal::configFactory()->getEditable('test_demo.settings')
+      ->set('siteapikey', $form['site_information']['siteapikey']['#value'])
+      ->save();
+    drupal_set_message($form['site_information']['siteapikey']['#value'].' - Site API Key updated.');
   }
 }
